@@ -11,6 +11,8 @@
 package com.example.demo;
 
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.util.*;
@@ -32,7 +34,7 @@ public class T {
     static
     {
         T.ValidFieldMap = T.get("fileds-map.properties");
-        T.ValidMap = T.getValidFieldList("valid.properties");
+        T.ValidMap = T.getMap("valid.yml");
     }
 
     public static void main(String[] args) throws IOException {
@@ -44,15 +46,6 @@ public class T {
         return T.ValidFieldMap.getOrDefault(field, field);
     }
 
-    private static Map<String,List<String>> getValidFieldList(String key) {
-        Map<String, String> valid = get(key);
-        Map<String, List<String>> map = new HashMap<>();
-
-        valid.forEach((k,v) -> {
-            map.put(k,Arrays.asList(v.split(",")));
-        });
-        return map;
-    }
 
     @SuppressWarnings("unchecked")
     private static Map<String,String> get(String propertiesFile){
@@ -65,6 +58,37 @@ public class T {
             e.printStackTrace();
         }
         return new HashMap<>((Map) properties);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, List<String>> getMap(String key) {
+        Resource resource = new ClassPathResource(key);
+        Yaml yaml = new Yaml();
+        Map<Object, Map> map = null;
+        try {
+            map = (Map)yaml.load(resource.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Map<String, List<String>> listMap = new HashMap<>(128);
+
+        if (null == map) {
+            return listMap;
+        }
+        map.forEach((k, v) -> {
+            Map<Object, String> v1 = v;
+            if (null != v1) {
+                v1.forEach((ka, va) -> {
+                    if (null != va) {
+                        listMap.put(ka.toString(), Arrays.asList(va.split(",")));
+                    }
+                });
+            }
+
+        });
+
+
+        return listMap;
     }
 
 
